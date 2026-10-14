@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مسابقة التحدي – التراث العُماني</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --plum:#3b1f5e; --rose:#ff7eb6; --violet:#8b6cf0; --teal:#2ec4b6;
+  --peach:#ffb27a; --sky:#6cb8ff; --gold:#ffd166; --ok:#27ae80; --bad:#e5546b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{
+  font-family:'Cairo','Segoe UI',Tahoma,sans-serif;color:var(--plum);
+  background:linear-gradient(135deg,#ffe0f0 0%,#e0d4ff 45%,#cdf3ff 100%);
+  background-attachment:fixed;overflow-x:hidden;
+}
+.bubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bubbles i{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(circle at 30% 28%,#fff 0,rgba(255,255,255,.85) 8%,var(--c) 55%,rgba(0,0,0,.18) 130%);
+  box-shadow:0 18px 30px rgba(59,31,94,.18);opacity:.75;animation:float var(--d) ease-in-out infinite alternate;
+}
+@keyframes float{from{transform:translateY(0) translateX(0)}to{transform:translateY(-40px) translateX(18px)}}
+.app{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:18px 14px 40px}
+
+header{text-align:center;margin-bottom:12px}
+.title{
+  font-size:clamp(28px,6vw,50px);font-weight:900;color:#fff;line-height:1.25;
+  text-shadow:0 1px 0 #ffb3d6,0 2px 0 #ff9cc9,0 3px 0 #ff86bc,0 4px 0 #f56fae,0 5px 0 #e0589a,0 6px 0 #c9448a,
+              0 8px 6px rgba(59,31,94,.35),0 14px 22px rgba(59,31,94,.3);
+}
+.sub{font-weight:600;margin-top:6px;opacity:.85}
+.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;font-weight:700;font-size:14px}
+.brand img{height:46px;border-radius:12px;display:none}
+
+.hud{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0 14px}
+.pill{background:rgba(255,255,255,.78);backdrop-filter:blur(6px);border-radius:999px;padding:6px 16px;font-weight:800;font-size:15px;
+  box-shadow:0 4px 0 rgba(139,108,240,.35),0 10px 16px rgba(59,31,94,.12)}
+.pill b{color:var(--violet)}
+.sound-btn{cursor:pointer;border:0;font-family:inherit;color:inherit}
+
+.screen{display:none}.screen.active{display:block}
+.panel{background:rgba(255,255,255,.82);backdrop-filter:blur(8px);border-radius:28px;padding:28px 22px;text-align:center;
+  box-shadow:0 8px 0 rgba(139,108,240,.3),0 24px 40px rgba(59,31,94,.18);max-width:620px;margin:20px auto}
+.panel h2{font-size:28px;font-weight:900;margin-bottom:10px}
+.panel p{font-weight:600;line-height:1.9;margin-bottom:8px}
+.big-emoji{font-size:64px;display:inline-block;animation:spin3d 4s linear infinite}
+@keyframes spin3d{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+.btn{margin-top:14px;font-family:inherit;font-weight:900;font-size:20px;cursor:pointer;color:#fff;border:0;border-radius:18px;padding:12px 38px;
+  background:linear-gradient(180deg,#ff9cc9,var(--rose));box-shadow:0 6px 0 #d9498a,0 14px 20px rgba(217,73,138,.35);transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(5px);box-shadow:0 1px 0 #d9498a,0 4px 8px rgba(217,73,138,.3)}
+.btn:focus-visible,.opt:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+
+/* progress + timer */
+.meta{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-weight:800}
+.progress{flex:1;height:14px;border-radius:99px;background:rgba(255,255,255,.75);overflow:hidden;box-shadow:inset 0 2px 4px rgba(59,31,94,.2)}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--sky));border-radius:99px;transition:width .5s}
+.timer{height:10px;border-radius:99px;background:rgba(255,255,255,.75);overflow:hidden;margin-bottom:16px;box-shadow:inset 0 2px 4px rgba(59,31,94,.2)}
+.timer span{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--gold),var(--peach),var(--rose));border-radius:99px;transform-origin:right}
+
+/* question 3D card */
+.stage{perspective:1200px}
+.qcard{
+  position:relative;border-radius:26px;padding:24px 22px 22px;text-align:center;color:#fff;
+  background:linear-gradient(145deg,#9d7bff,#6f4fe0);
+  box-shadow:0 10px 0 #4b32b0,0 26px 36px rgba(59,31,94,.3);
+  transform-style:preserve-3d;animation:cardIn .7s cubic-bezier(.2,.8,.2,1.1);
+}
+@keyframes cardIn{from{transform:rotateX(-70deg) translateY(-30px);opacity:0}to{transform:none;opacity:1}}
+.qcard .qem{font-size:54px;display:block;filter:drop-shadow(0 6px 4px rgba(0,0,0,.25));animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) rotateY(20deg)}}
+.qcard .qtxt{font-size:clamp(18px,3.6vw,24px);font-weight:800;line-height:1.8;margin-top:6px;text-shadow:0 2px 3px rgba(0,0,0,.25)}
+.qcard .pg{position:absolute;top:12px;left:14px;background:rgba(255,255,255,.25);border-radius:12px;padding:2px 12px;font-size:14px;font-weight:800}
+
+/* options */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;perspective:1000px}
+.opt{
+  --rx:0deg;--ry:0deg;--lift:0px;
+  position:relative;border:0;font-family:inherit;cursor:pointer;color:#fff;font-weight:800;font-size:18px;line-height:1.6;
+  min-height:78px;padding:12px 16px 12px 56px;border-radius:20px;text-align:right;
+  background:linear-gradient(145deg,var(--a),var(--b));
+  box-shadow:0 7px 0 var(--edge),0 16px 22px rgba(59,31,94,.25);text-shadow:0 2px 3px rgba(0,0,0,.25);
+  transform:rotateX(var(--rx)) rotateY(var(--ry)) translateZ(var(--lift));
+  transition:transform .18s ease-out,background .3s;
+  animation:optIn .55s cubic-bezier(.2,.8,.2,1.15) both;animation-delay:var(--d);
+}
+@keyframes optIn{from{transform:rotateY(90deg) scale(.8);opacity:0}to{opacity:1}}
+.opt .ltr{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.9);color:var(--edge);display:flex;align-items:center;justify-content:center;font-weight:900;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.12);
+}
+.opt:hover:not(:disabled){--lift:18px}
+.opt:disabled{cursor:default}
+.opt.correct{background:linear-gradient(145deg,#6ee7b7,var(--ok))!important;box-shadow:0 7px 0 #1b8a64,0 0 28px rgba(46,196,182,.7)!important;--lift:22px;animation:pop .5s}
+.opt.wrong{background:linear-gradient(145deg,#ff9aa9,var(--bad))!important;box-shadow:0 7px 0 #b33449!important;animation:shake .45s}
+.opt.dim{opacity:.55}
+@keyframes pop{50%{transform:scale(1.07) translateZ(30px)}}
+@keyframes shake{20%,60%{transform:translateX(-9px) rotateZ(-2deg)}40%,80%{transform:translateX(9px) rotateZ(2deg)}}
+
+.feedback{display:none;margin-top:22px;background:rgba(255,255,255,.88);border-radius:22px;padding:16px 18px;text-align:center;
+  box-shadow:0 6px 0 rgba(139,108,240,.3),0 16px 26px rgba(59,31,94,.15);animation:cardIn .5s}
+.feedback.show{display:block}
+.feedback .verdict{font-size:22px;font-weight:900}
+.feedback .verdict.ok{color:var(--ok)}.feedback .verdict.no{color:var(--bad)}
+.feedback p{font-weight:600;line-height:1.9;margin-top:4px}
+
+.spark{position:fixed;z-index:50;pointer-events:none;font-size:22px;animation:burst 1s ease-out forwards}
+@keyframes burst{to{transform:translate(var(--x),var(--y)) rotate(var(--r)) scale(.4);opacity:0}}
+.stars{font-size:46px;letter-spacing:6px;margin:6px 0}
+.stat{display:inline-block;margin:4px 8px;font-weight:800}
+footer{text-align:center;margin-top:30px;font-weight:700;font-size:14px;opacity:.8}
+
+@media (max-width:640px){
+  .opts{grid-template-columns:1fr;gap:14px}
+  .opt{font-size:16.5px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ======== بطاقات التطابق ======== */
+/* board */
+.board{display:grid;grid-template-columns:1fr 1.5fr;gap:26px;align-items:start;perspective:1100px}
+.col{display:flex;flex-direction:column;gap:14px;perspective:900px}
+.col-title{text-align:center;font-weight:900;font-size:16px;opacity:.75}
+
+.card{
+  --rx:0deg;--ry:0deg;--lift:0px;
+  position:relative;border:0;background:none;font-family:inherit;color:inherit;cursor:pointer;
+  min-height:78px;width:100%;
+  transform-style:preserve-3d;
+  transform:rotateX(var(--rx)) rotateY(var(--ry)) translateZ(var(--lift));
+  transition:transform .18s ease-out;
+}
+.card .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.8,.2,1.2)}
+.card.matched .inner{transform:rotateY(180deg)}
+.face{
+  position:absolute;inset:0;border-radius:20px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;
+}
+.word .front{
+  color:#fff;font-weight:900;font-size:21px;
+  background:linear-gradient(145deg,var(--a),var(--b));
+  box-shadow:0 7px 0 var(--edge),0 16px 22px rgba(59,31,94,.25);
+  text-shadow:0 2px 3px rgba(0,0,0,.25);
+}
+.word .front .em{font-size:28px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.25))}
+.clue .front{
+  background:linear-gradient(160deg,#fff,#fdf7ff);
+  border:3px solid var(--a);
+  box-shadow:0 7px 0 var(--edge),0 14px 20px rgba(59,31,94,.15);
+  font-weight:700;font-size:15.5px;line-height:1.7;text-align:right;justify-content:space-between;
+}
+.clue .pg{flex:none;background:var(--a);color:#fff;border-radius:12px;padding:2px 9px;font-size:13px;font-weight:800}
+.back{
+  transform:rotateY(180deg);
+  background:linear-gradient(145deg,#6ee7b7,var(--ok));color:#fff;font-weight:900;font-size:20px;
+  box-shadow:0 7px 0 #1b8a64,0 0 24px rgba(46,196,182,.6);
+}
+.card.selected{--lift:34px}
+.card.selected .front{outline:5px solid var(--gold);outline-offset:-2px}
+.card.matched{pointer-events:none;--lift:0px}
+.card.shake{animation:shake .45s}
+@keyframes shake{20%,60%{transform:translateX(-9px) rotateZ(-2deg)}40%,80%{transform:translateX(9px) rotateZ(2deg)}}
+.card.wrong .front{background:linear-gradient(145deg,#ff9aa9,var(--bad))!important;border-color:var(--bad)!important;color:#fff}
+
+
+@media (max-width:760px){
+  .board{grid-template-columns:1fr;gap:14px}
+  .col.words{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .col.words .col-title{grid-column:1/-1}
+  .word .front{font-size:17px}
+}
+
+/* ======== خاصة بمسابقة التحدي ======== */
+.round-banner{text-align:center;font-weight:900;font-size:20px;margin-bottom:10px}
+.stagehead{text-align:center;font-weight:900;font-size:18px;margin-bottom:6px;opacity:.85}
+.name-box{margin:14px auto 4px;max-width:360px}
+.name-box label{display:block;font-weight:800;margin-bottom:6px}
+.name-box input{width:100%;font-family:inherit;font-size:20px;font-weight:800;text-align:center;color:var(--plum);
+  border:3px solid #cdbbff;border-radius:18px;padding:10px 14px;background:#fff;box-shadow:inset 0 3px 0 rgba(139,108,240,.15)}
+.name-box input:focus-visible{outline:4px solid var(--gold);outline-offset:2px}
+.rules{text-align:right;margin:10px auto 0;max-width:460px;font-weight:600;line-height:1.9}
+.rules li{margin-right:22px}
+.board-list{margin:14px auto 0;max-width:460px;text-align:right}
+.board-list h3{text-align:center;font-weight:900;margin-bottom:6px}
+.board-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.75);border-radius:14px;padding:6px 14px;margin-bottom:6px;font-weight:700;
+  box-shadow:0 3px 0 rgba(139,108,240,.25)}
+.board-row.me{background:linear-gradient(90deg,#fff3c4,#ffe29a);box-shadow:0 3px 0 #e0b84a}
+.board-row .rk{width:30px;text-align:center;font-size:20px}
+.board-row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-row .sc{font-weight:900;color:var(--violet)}
+.board-row .tm{font-size:13px;opacity:.75}
+.tiny{font-family:inherit;font-size:13px;font-weight:700;background:none;border:0;color:var(--plum);opacity:.6;cursor:pointer;margin-top:8px;text-decoration:underline}
+
+.map{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:760px;margin:14px auto 0;perspective:1100px}
+.scard{--rx:0deg;--ry:0deg;--lift:0px;position:relative;border:0;font-family:inherit;color:#fff;text-align:center;border-radius:26px;padding:22px 16px 18px;min-height:190px;
+  background:linear-gradient(145deg,var(--a),var(--b));box-shadow:0 10px 0 var(--edge),0 24px 32px rgba(59,31,94,.26);
+  transform:rotateX(var(--rx)) rotateY(var(--ry)) translateZ(var(--lift));transition:transform .18s ease-out;
+  animation:optIn .6s cubic-bezier(.2,.8,.2,1.15) both;animation-delay:var(--d)}
+.scard .num{position:absolute;top:12px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.92);color:var(--edge);font-weight:900;
+  display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+.scard .se{font-size:50px;display:block;filter:drop-shadow(0 6px 4px rgba(0,0,0,.25))}
+.scard .st{font-size:22px;font-weight:900;margin-top:2px;text-shadow:0 2px 3px rgba(0,0,0,.25)}
+.scard .sd{font-size:14.5px;font-weight:600;line-height:1.7;margin-top:4px}
+.scard .stat2{margin-top:8px;display:inline-block;background:rgba(255,255,255,.28);border-radius:12px;padding:2px 12px;font-weight:800;font-size:15px}
+.scard.current{cursor:pointer;animation:optIn .6s cubic-bezier(.2,.8,.2,1.15) both,glow 1.6s ease-in-out infinite alternate}
+.scard.current:hover{--lift:20px}
+@keyframes glow{to{box-shadow:0 10px 0 var(--edge),0 0 34px 6px rgba(255,209,102,.9)}}
+.scard.locked{filter:grayscale(.85) brightness(1.05);opacity:.6;cursor:default}
+.scard.done{background:linear-gradient(145deg,#6ee7b7,var(--ok));box-shadow:0 10px 0 #1b8a64,0 24px 32px rgba(59,31,94,.2);cursor:default}
+.hudbtn{cursor:pointer}
+.matchedpair{display:none}
+@media (max-width:560px){
+  .map{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="bubbles" id="bubbles"></div>
+
+<div class="app">
+  <header>
+    <h1 class="title">مسابقة التحدي</h1>
+    <div class="sub">تحدّي التراث العُماني: أربع مراحل... هل تصلين إلى القمة؟</div>
+    <div class="brand"><img src="student.jpeg" alt="" onload="this.style.display='block'"><span>فريق سراج عُمان – مدرسة بلقيس (7-10)</span></div>
+  </header>
+
+  <div class="hud" id="hud" style="display:none">
+    <div class="pill">👩‍🎓 <b id="pName"></b></div>
+    <div class="pill">⭐ النقاط: <b id="score">0</b></div>
+    <div class="pill">🔥 تتابع: <b id="streak">0</b></div>
+    <div class="pill">⏱️ <b id="time">00:00</b></div>
+    <button class="pill hudbtn" id="soundBtn" aria-label="تشغيل أو إيقاف الصوت">🔊 الصوت</button>
+    <button class="pill hudbtn" id="restartBtn" aria-label="إعادة التحدي من البداية">↺ إعادة التحدي</button>
+  </div>
+
+  <!-- البداية -->
+  <section class="screen active" id="startScreen">
+    <div class="panel">
+      <div class="big-emoji">🏆</div>
+      <h2>هل أنتِ مستعدة للتحدي؟</h2>
+      <ul class="rules">
+        <li>أربع مراحل تُفتح بالترتيب: مرحلتان للتطابق ومرحلتان للاختيار من متعدد.</li>
+        <li>النقاط تتجمع طوال التحدي، والتتابع في الإجابات الصحيحة يمنحك نقاطًا إضافية.</li>
+        <li>الوقت يُحتسب، وكل خطأ يُسجَّل عليكِ، فتأنَّي وأجيبي بسرعة!</li>
+        <li>في النهاية يظهر اسمك في لوحة الشرف.</li>
+      </ul>
+      <div class="name-box">
+        <label for="nameInput">اكتبي اسمك:</label>
+        <input id="nameInput" maxlength="20" autocomplete="off" placeholder="اسم الطالبة">
+      </div>
+      <button class="btn" id="startBtn">ابدئي التحدي</button>
+      <div class="board-list" id="startBoard"></div>
+      <button class="tiny" id="clearBoard">مسح لوحة الشرف</button>
+    </div>
+  </section>
+
+  <!-- خريطة المراحل -->
+  <section class="screen" id="mapScreen">
+    <div class="round-banner" id="mapTitle"></div>
+    <div class="map" id="map"></div>
+  </section>
+
+  <!-- اللعب -->
+  <section class="screen" id="gameScreen"><div id="game"></div></section>
+
+  <!-- نهاية مرحلة -->
+  <section class="screen" id="stageEnd"><div class="panel" id="stageEndBox"></div></section>
+
+  <!-- النتيجة النهائية -->
+  <section class="screen" id="finalScreen"><div class="panel" id="finalBox"></div></section>
+
+  <footer>فريق سراج عُمان – مدرسة بلقيس (7-10)</footer>
+</div>
+
+<script>
+/* ============ البيانات (من الألعاب الأربع) ============ */
+const MATCH_A = [
+  {id:'ma',  name:'المعصورة',       em:'🐟', page:375, clue:'أكلة من السمك تُقدَّم مع الأرز الأبيض، ويُضاف إليها البصل وعصير الليمون.'},
+  {id:'ka',  name:'الكامي',         em:'🧀', page:366, clue:'جبن طري محلي يُصنع من اللبن، ويؤكل عادة مع الأرز أو الخبز أو التمر.'},
+  {id:'mu',  name:'المضبي',         em:'🍖', page:373, clue:'لحم مشوي على الحجارة الساخنة داخل حفرة في الأرض، ويُقدَّم في الأعياد والمناسبات.'},
+  {id:'th',  name:'الثريد',         em:'🥘', page:340, clue:'خبز عُماني مقطّع يُسكب عليه المرق الساخن مع اللحم أو الدجاج، ويسمى أيضًا الفريد والفتة.'},
+  {id:'ba',  name:'البثيث',         em:'🍡', page:364, clue:'حلى عُماني يُحضَّر من مجلّلا التمر مع السمن والدقيق، ويُقدَّم على هيئة كرات صغيرة.'},
+  {id:'sa',  name:'السحناة',        em:'🌶️', page:351, clue:'أكلة تُحضَّر من القاشع (سمك الزنكة المجفف) المقلي مع البصل والليمون والفلفل الحار.'},
+  {id:'jo',  name:'الجولة والعسل',  em:'🍯', page:342, clue:'أكلة من التمر (الخر) مع الخبز العُماني والسمن والعسل، تُقدَّم عادة للضيوف.'},
+  {id:'aw',  name:'العوال',         em:'🐠', page:359, clue:'أسماك صغيرة مجففة ومحفوظة بطرق تقليدية، تبقى صالحة للاستهلاك أكثر من 6 أشهر.'},
+  {id:'bb',  name:'البابلوه',       em:'🍲', page:323, clue:'أكلة بحرية من سمك الكند والصيمة والعومة تُسلق مع البصل والثوم والكركم والفلفل.'},
+  {id:'hb',  name:'الهبان',         em:'🎶', page:330, clue:'آلة موسيقية تقليدية من خشب التاجل، لها كيس من جلد الغنم أو الماعز يُنفخ فيه.'}
+];
+const MATCH_B = [
+  {id:'ms',  name:'المسندو',          em:'🥁', page:329, clue:'طبول تقليدية أفريقية المنشأ، من أنواعها مسندو الشوباني ومسندو الطنبورة ومسندو برميلي ومسندو الليوا.'},
+  {id:'jd',  name:'الجم والدف',       em:'🐚', page:323, clue:'أداة من صدفة بحرية كبيرة يُنفخ فيها للإعلان عن المناسبات، وآلة إيقاعية مغطاة بجلد الأغنام تُضرب باليد.'},
+  {id:'mr',  name:'المرواس',          em:'🎶', page:327, clue:'طبل تقليدي رمبلي الشكل يُصنع من جذع شجرة البيدام أو الساج، ولا يُستعمل معه سوى طبل المهجر.'},
+  {id:'tr',  name:'الطار والطنبورة',  em:'🎸', page:325, clue:'دف جلدي يسمى أيضًا السماع، وآلة وترية على شكل صندوق خشبي تسمى أيضًا الكثارة.'},
+  {id:'hn',  name:'الهونجو',          em:'🎻', page:331, clue:'آلة تقليدية تُستعمل في فن الحركة بمحافظة الباطنة، ووعاؤها مصنوع من ثمرة قرع مجففة.'},
+  {id:'ml',  name:'المولد',           em:'📖', page:243, clue:'احتفال ديني بمناسبة المولد النبوي الشريف، تُقرأ فيه السيرة النبوية وتُنشد القصائد، ويسمى أيضًا المالد.'},
+  {id:'qr',  name:'القرنقشوه',        em:'🍬', page:239, clue:'احتفال يقوم به الأطفال في ليلة منتصف رمضان، يطوفون فيه على البيوت لجمع الحلوى.'},
+  {id:'hb',  name:'الهبطة',           em:'🐐', page:245, clue:'سوق تقليدية تُقام قبل عيدي الفطر والأضحى بثلاثة أيام لبيع المواشي وشرائها.'},
+  {id:'tm',  name:'التومينة',         em:'🏮', page:220, clue:'احتفال يُقام عند ختم أحد الأطفال القرآن الكريم، ويسمى أيضًا التيمينة والتأمينة والختمة.'},
+  {id:'hh',  name:'حول حول',          em:'🎂', page:223, clue:'عادة يقوم بها الأطفال احتفالًا بإكمال الطفل حوله الأول حسب التقويم الهجري.'}
+];
+const QS_C = [
+  {em:'🎣', page:236, q:'ما اسم الحرفة التقليدية التي يقوم فيها الصيادون بصناعة وصيانة شباك الصيد؟',
+   opts:['الضغوة','الهياسة','الوسم','الدباغة'], ans:0,
+   why:'الضغوة جرفة تقليدية يصنع فيها الصيادون شباك الصيد ويصونونها، وتُعد جزءًا من التراث العُماني العريق.'},
+  {em:'🌴', page:227, q:'ما الاحتفال التقليدي الذي يُقام عند غرس شتلات الكيدا، وتشارك فيه النساء بالأهازيج والطبول؟',
+   opts:['السبلة','زفة الكيدا','النطل','المحلب'], ans:1,
+   why:'زفة الكيدا احتفال يُقام عند غرس شتلات الكيدا، وتُغطّى فيه الشتلة بأغصان النخيل والقماش الأخضر كما العروس.'},
+  {em:'🏛️', page:229, q:'ما المؤسسة الاجتماعية التقليدية التي تمثل مقرًا للاجتماع والتباحث وحل النزاعات، وتُقدَّم فيها القهوة للضيوف؟',
+   opts:['الضغوة','البيدار','السبلة','الوسم'], ans:2,
+   why:'السبلة مؤسسة اجتماعية تُؤخذ فيها القرارات وتُحل النزاعات، ويُربّى فيها النشء على عادات الآباء والأجداد.'},
+  {em:'🔥', page:197, q:'ما طريقة العلاج التقليدية القائمة على كي الجلد بقطعة معدنية محماة تسمى «الميسم»؟',
+   opts:['النيلة','الهياسة','الدباغة','الوسم'], ans:3,
+   why:'الوسم علاج تقليدي يقوم على كي الجلد بالميسم المحمّى، ويُستخدم لعلاج حالات مثل التزاف وعرق النسا.'},
+  {em:'🐂', page:196, q:'ما اسم المهنة التقليدية التي تعني حراثة الأرض باستخدام الثور؟',
+   opts:['الهياسة','السقاي','البيدار','الضغوة'], ans:0,
+   why:'الهياسة هي حراثة الأرض باستخدام الثور، وأدواتها المحراث والنير والحبل.'},
+  {em:'💧', page:184, q:'أي هذه الأدوات يستعملها السقاي في جلب الماء؟',
+   opts:['المحراث','الميسم','الخرس والكلاوي','الإبرة'], ans:2,
+   why:'السقاي يجلب الماء من موارده العذبة إلى البيوت بأدوات مثل الخرس والكلاوي، وغالبًا ينقله بالحمار.'},
+  {em:'🧑‍🌾', page:181, q:'من هو «البيدار»؟',
+   opts:['صانع حلي من الذهب والفضة','شخص يستأجره أصحاب البساتين ليقوم بعمليات الزراعة والعمل في الحقول','معالج يكوي الجلد بالميسم','صياد يصنع شباك الصيد'], ans:1,
+   why:'البيدار شخص يستأجره أصحاب البساتين والأراضي الزراعية، ومن أدواته المجرفة والمنجل والمحراث والسلة.'},
+  {em:'🌼', page:177, q:'المحلب صبغة عُمانية تقليدية تُصنع من جذور أي نبات؟',
+   opts:['الكركم','نبات العظام','القرع','الساج'], ans:0,
+   why:'يُصنع المحلب من جذور الكركم بعد تجفيفها وتنقيتها وطحنها، ويُستخدم لتزيين بشرة النساء في المناسبات والأعراس.'},
+  {em:'💙', page:173, q:'ما لون صبغة النيلة التي تُستخرج من نبات العظام؟',
+   opts:['الأصفر الذهبي','الأخضر','الأزرق','الأحمر'], ans:2,
+   why:'النيلة صبغة زرقاء تُستعمل في تلوين الملابس والأقمشة والخيوط والسلاسل والجلود.'},
+  {em:'💍', page:171, q:'ما الحلية العُمانية النسائية التقليدية المصنوعة من الذهب أو الفضة، وتتصل بها أجزاء أسطوانية تصدر صوتًا عند الحركة؟',
+   opts:['المحلب','النطل','النيلة','الميسم'], ans:1,
+   why:'النطل حلية نسائية تقليدية من الذهب أو الفضة تُلبس في يد المرأة، وتسمى أيضًا النطلة وخلخال وجحل.'}
+];
+const QS_D = [
+  {em:'🔔', page:169, q:'ما اسم الخلاخل الصغيرة ذات السلك المسطح التي تلبسها الفتيات الصغيرات والنساء، وتسمى أيضًا «حجول»؟',
+   opts:['الحجول','المرية','العقام','البرقع'], ans:0,
+   why:'الحجول خلاخل صغيرة ذات سلك مسطح تُصنع في معظم عُمان، وتتصل بها أحيانًا شلاشل تصدر صوتًا عند الحركة.'},
+  {em:'🌸', page:176, q:'ما الخلطة العطرية النسائية التقليدية ذات اللون الطيني التي تُستعمل لتبييض البشرة وتنقيتها؟',
+   opts:['المحلب','النيلة','الصُّندل','المعجين'], ans:2,
+   why:'الصندل خلطة عطرية تُدعك فيها حواكة الصندل على حجر مستوٍ مع ماء الورد، وتُستخدم في المناسبات الاجتماعية كالأعراس والولادة.'},
+  {em:'👳', page:134, q:'ما اسم غطاء الرأس الذي يلبسه الرجل العُماني، ويسمى أيضًا «الماسار»؟',
+   opts:['الخمار','المصر','البرقع','الحزام'], ans:1,
+   why:'المصر (الماسار) من مكونات لباس الرجال العُمانيين، ومعه الدشداشة والبشت، ومن زينتهم الخنجر والحزام والعصا.'},
+  {em:'✨', page:146, q:'ما الحلية التي تلبسها النساء أسفل وجوههن، وتُثبّت في جزئها السفلي خيوط طويلة سوداء؟',
+   opts:['الحجول','العقام','المرية','الصندل'], ans:1,
+   why:'العِقام حلية تُصنع من الذهب أو الفضة، وتُشكَّل قطعته العلوية من معدن مزخرف وتُثبّت في أسفلها خيوط سوداء طويلة.'},
+  {em:'📿', page:146, q:'أي هذه القطع حلية فضية تُلبس على الصدر ضمن حلي النساء العُمانيات؟',
+   opts:['الشبيك','الخمار','الربّة','السروال'], ans:2,
+   why:'الربّة حلية فضية تُلبس على الصدر، أما الشبيك فحلي يزيّن الرأس، والسباط قلادة تقليدية من الفضة.'},
+  {em:'🎭', page:149, q:'ما غطاء الوجه الذي تضعه النساء في عُمان، ويختص بصناعته النساء البدويات؟',
+   opts:['العقام','البرقع','الخمار','المرش'], ans:1,
+   why:'البرقع غطاء تضعه النساء على وجوههن، ويُلبس للاحتشام والزينة وحماية الوجه من الشمس والغبار.'},
+  {em:'💎', page:164, q:'ما الحلية النسائية المكوّنة من كُريّات متراصّة من الفضة، تضعها النساء حول العنق في المناسبات؟',
+   opts:['المرية','الحجول','العقام','البرقع'], ans:0,
+   why:'المُرية حلية نسائية من كريات الفضة المتراصّة، ويكون في وسطها صندوق ذهبي أو فضي أو حرف.'},
+  {em:'🥩', page:374, q:'ما الأكلة التقليدية لحفظ اللحم المنتشرة في محافظة ظفار، وتُقدَّم في الأعياد مع التمر أو الكعك الرفيق؟',
+   opts:['العوال','الثريد','المضبي','المعجين'], ans:3,
+   why:'المعجين يُحضَّر بتقطيع اللحم إلى شرائح وتجفيفه تحت الشمس وتغطيته بالملح، ويبقى صالحًا للأكل مدة لا تقل عن 3 أشهر.'},
+  {em:'🧺', page:120, q:'المخرافة سلة تُستعمل لحرف وحمل ثمار النخيل والأمبا والليمون، فمن أي مادة تُصنع؟',
+   opts:['جلد الغنم','الفضة','خوص النخيل (السرد)','خشب الساج'], ans:2,
+   why:'تُصنع المخرافة من خوص النخيل بشكل حلزوني، ولها معصمان طويلان من حبال الليف مثبتان في حوافها العلوية.'},
+  {em:'🌹', page:122, q:'ما القاورة الفضية التي تُستعمل لرش العطور وماء الورد في المناسبات كالأعراس؟',
+   opts:['المخرافة','المرش','الصندل','البرقع'], ans:1,
+   why:'المرش قاورة تُصنع من الفضة، لها أنبوب طويل ينتهي بغطاء مخروطي ذي ثقوب، وهو رمز من رموز الضيافة والكرم.'}
+];
+
+const PALETTE = [
+  {a:'#ff7eb6',b:'#ff5fa2',edge:'#d9498a'},
+  {a:'#8b6cf0',b:'#6f4fe0',edge:'#5236b8'},
+  {a:'#2ec4b6',b:'#1ea89b',edge:'#157f75'},
+  {a:'#ffa45e',b:'#ff8a3d',edge:'#d06a22'},
+  {a:'#6cb8ff',b:'#4a9cf2',edge:'#2f78c4'}
+];
+const COLORS = PALETTE;
+const LETTERS=['أ','ب','ج','د'];
+const TIME_LIMIT = 20;
+
+const STAGES = [
+  {type:'match', e:'🍚', t:'المرحلة الأولى',  d:'تطابق: الأكلات التقليدية والهبان', data:MATCH_A},
+  {type:'match', e:'🥁', t:'المرحلة الثانية', d:'تطابق: الآلات والعادات والاحتفالات', data:MATCH_B},
+  {type:'quiz',  e:'🌴', t:'المرحلة الثالثة', d:'اختيار من متعدد: العادات والمهن والزينة', data:QS_C},
+  {type:'quiz',  e:'👑', t:'المرحلة الرابعة', d:'اختيار من متعدد: اللباس والأدوات والأكلات', data:QS_D}
+];
+
+/* ============ أدوات ============ */
+const $ = s => document.querySelector(s);
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const fmt = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));window.scrollTo({top:0});}
+
+/* ============ الصوت ============ */
+let soundOn=true, ac;
+function tone(f,st,d,type='sine',v=.18){
+  if(!soundOn) return;
+  ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+  const o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime+st;
+  o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+  o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d);
+}
+const sfx={
+  pick(){tone(520,0,.08,'triangle',.12)},
+  ok(){tone(660,0,.12);tone(880,.1,.12);tone(1175,.2,.22)},
+  bad(){tone(220,0,.18,'sawtooth',.14);tone(160,.15,.25,'sawtooth',.14)},
+  win(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.13,.3,'triangle',.2))}
+};
+$('#soundBtn').onclick=e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'🔊 الصوت':'🔇 صامت'};
+
+/* ============ المؤثرات ============ */
+(function(){
+  const cols=['#ff9cc9','#b7a3ff','#7fe3d6','#ffcf9e','#9ccfff'], box=$('#bubbles');
+  for(let i=0;i<14;i++){
+    const el=document.createElement('i'), s=30+Math.random()*90;
+    el.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--c:${cols[i%cols.length]};--d:${4+Math.random()*5}s`;
+    box.appendChild(el);
+  }
+})();
+function sparkle(el){
+  const r=el.getBoundingClientRect(), icons=['✨','🌸','💜','⭐','🎀'];
+  for(let i=0;i<10;i++){
+    const s=document.createElement('span');s.className='spark';s.textContent=icons[i%icons.length];
+    s.style.left=(r.left+r.width/2)+'px';s.style.top=(r.top+r.height/2)+'px';
+    s.style.setProperty('--x',(Math.random()*260-130)+'px');
+    s.style.setProperty('--y',(Math.random()*200-130)+'px');
+    s.style.setProperty('--r',(Math.random()*360)+'deg');
+    document.body.appendChild(s);setTimeout(()=>s.remove(),1000);
+  }
+}
+function confettiRain(){
+  const icons=['🎉','✨','🌸','💜','⭐','🎀','🏆'];
+  for(let i=0;i<14;i++){
+    const s=document.createElement('span');s.className='spark';
+    s.textContent=icons[Math.floor(Math.random()*icons.length)];
+    s.style.left=(Math.random()*100)+'vw';s.style.top='-20px';
+    s.style.setProperty('--x',(Math.random()*120-60)+'px');
+    s.style.setProperty('--y',(window.innerHeight+40)+'px');
+    s.style.setProperty('--r',(Math.random()*720)+'deg');
+    s.style.animationDuration=(1.6+Math.random())+'s';
+    document.body.appendChild(s);setTimeout(()=>s.remove(),2700);
+  }
+}
+function tilt(b,amt=14){
+  b.addEventListener('pointermove',e=>{
+    if(b.disabled||e.pointerType==='touch')return;
+    const r=b.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    b.style.setProperty('--ry',(x*amt)+'deg');b.style.setProperty('--rx',(-y*amt)+'deg');
+  });
+  b.addEventListener('pointerleave',()=>{b.style.setProperty('--rx','0deg');b.style.setProperty('--ry','0deg')});
+}
+
+/* ============ لوحة الشرف ============ */
+const LB_KEY='sirajChallengeBoard';
+function loadBoard(){ try{ return JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch(e){ return []; } }
+function saveBoard(list){ try{ localStorage.setItem(LB_KEY,JSON.stringify(list)); }catch(e){} }
+function sortBoard(list){ return list.sort((a,b)=> b.s-a.s || a.t-b.t); }
+function renderBoard(el, meId){
+  const list=sortBoard(loadBoard()).slice(0,5);
+  if(!list.length){ el.innerHTML=''; return; }
+  const medals=['🥇','🥈','🥉','4','5'];
+  el.innerHTML='<h3>🏅 لوحة الشرف</h3>'+list.map((r,i)=>
+    `<div class="board-row${r.id===meId?' me':''}"><span class="rk">${medals[i]}</span><span class="nm">${esc(r.n)}</span><span class="tm">${fmt(r.t)}</span><span class="sc">${r.s}</span></div>`).join('');
+}
+
+/* ============ حالة التحدي ============ */
+let player='', total=0, streak=0, mistakesAll=0, secs=0, gTimer=null, results=[], cur=0, tout=[], sid=0;
+function later(fn,ms){const t=setTimeout(fn,ms);tout.push(t);return t}
+function clrStage(){tout.forEach(clearTimeout);tout=[]}
+function addScore(n){ total=Math.max(0,total+n); updateHud(); }
+function updateHud(){ $('#score').textContent=total; $('#streak').textContent=streak; }
+
+function startChallenge(){
+  player=($('#nameInput').value.trim()||'متحدية').slice(0,20);
+  total=0;streak=0;mistakesAll=0;secs=0;results=[];cur=0;sid=Date.now();
+  clearInterval(gTimer);
+  gTimer=setInterval(()=>{secs++;$('#time').textContent=fmt(secs)},1000);
+  $('#pName').textContent=player;$('#time').textContent='00:00';updateHud();
+  $('#hud').style.display='flex';
+  renderMap();
+}
+
+function renderMap(){
+  clrStage();
+  showScreen('mapScreen');
+  $('#mapTitle').textContent = cur<STAGES.length ? `المرحلة ${cur+1} من ${STAGES.length} بانتظارك، يا ${player}!` : '';
+  const map=$('#map');map.innerHTML='';
+  STAGES.forEach((s,i)=>{
+    const c=PALETTE[i%PALETTE.length];
+    const b=document.createElement('button');
+    const state = i<cur?'done':i===cur?'current':'locked';
+    b.className='scard '+state;
+    b.style.cssText=`--a:${c.a};--b:${c.b};--edge:${c.edge};--d:${i*0.1}s`;
+    const r=results[i];
+    b.innerHTML=`<span class="num">${i+1}</span><span class="se">${state==='locked'?'🔒':s.e}</span><div class="st">${s.t}</div><div class="sd">${s.d}</div>`+
+      (state==='done'?`<span class="stat2">${'⭐'.repeat(r.stars)+'☆'.repeat(3-r.stars)} · أخطاء: ${r.miss}</span>`:
+       state==='current'?`<span class="stat2">اضغطي للبدء ▶</span>`:'');
+    if(state==='current'){b.onclick=()=>{sfx.pick();playStage(i)};tilt(b,12);}
+    else b.disabled=true;
+    map.appendChild(b);
+  });
+}
+
+function playStage(i){
+  clrStage();streak=0;updateHud();
+  showScreen('gameScreen');
+  STAGES[i].type==='match' ? runMatch(i) : runQuiz(i);
+}
+
+function stageDone(i, miss, stars, detail){
+  clrStage();
+  results[i]={miss,stars,detail};mistakesAll+=miss;cur=i+1;
+  sfx.win();confettiRain();
+  const last=cur>=STAGES.length;
+  $('#stageEndBox').innerHTML=`<div class="big-emoji">${STAGES[i].e}</div><h2>أنهيتِ ${STAGES[i].t}!</h2>
+    <div class="stars">${'⭐'.repeat(stars)+'☆'.repeat(3-stars)}</div>
+    <p><span class="stat">❌ الأخطاء: <b>${miss}</b></span><span class="stat">⭐ النقاط الآن: <b>${total}</b></span></p>
+    <p>${detail}</p>
+    <button class="btn" id="goNext">${last?'عرض النتيجة النهائية 🏆':'المرحلة التالية ➜'}</button>`;
+  showScreen('stageEnd');
+  $('#goNext').onclick=()=>{ last ? showFinal() : renderMap(); };
+}
+
+function showFinal(){
+  clearInterval(gTimer);gTimer=null;clrStage();
+  const stars = mistakesAll<=5?3:mistakesAll<=12?2:1;
+  const title = stars===3?'🏅 بطلة التراث العُماني':stars===2?'🌟 متحدية مبدعة':'🌱 متحدية مجتهدة';
+  const msg = stars===3?'أداء رائع! أنتِ خبيرة في التراث العُماني.':stars===2?'أحسنتِ! أنتِ قريبة جدًا من القمة، حاولي مرة أخرى.':'بداية جيدة! راجعي صفحات الكتاب وأعيدي التحدي.';
+  const list=loadBoard();
+  list.push({id:sid,n:player,s:total,t:secs,m:mistakesAll,d:new Date().toISOString().slice(0,10)});
+  const top=sortBoard(list).slice(0,20);saveBoard(top);
+  const rank=top.findIndex(r=>r.id===sid)+1;
+  $('#finalBox').innerHTML=`<div class="big-emoji">🏆</div><h2>مبروك يا ${esc(player)}!</h2>
+    <div class="stars">${'⭐'.repeat(stars)+'☆'.repeat(3-stars)}</div>
+    <h2 style="font-size:24px">${title}</h2>
+    <p><span class="stat">⭐ النقاط: <b>${total}</b></span><span class="stat">⏱️ الوقت: <b>${fmt(secs)}</b></span><span class="stat">❌ الأخطاء: <b>${mistakesAll}</b></span></p>
+    <p>${msg}${rank?` ترتيبك في لوحة الشرف: <b>${rank}</b>`:''}</p>
+    <div class="board-list" id="finalBoard"></div>
+    <button class="btn" id="again">تحدٍّ جديد</button>`;
+  showScreen('finalScreen');
+  renderBoard($('#finalBoard'),sid);
+  sfx.win();for(let k=0;k<5;k++)setTimeout(confettiRain,k*250);
+  $('#again').onclick=toStart;
+}
+
+function toStart(){
+  clearInterval(gTimer);gTimer=null;clrStage();
+  $('#hud').style.display='none';
+  renderBoard($('#startBoard'),null);
+  showScreen('startScreen');
+}
+
+/* ============ مرحلة التطابق ============ */
+function runMatch(si){
+  const st=STAGES[si], items=shuffle(st.data);
+  const rounds=[items.slice(0,5),items.slice(5,10)];
+  let r=0, matched=0, selW=null, selC=null, locked=false, miss=0;
+  $('#game').innerHTML=`<div class="stagehead">${st.e} ${st.t} – ${st.d}</div>
+    <div class="round-banner" id="rb"></div>
+    <div class="meta"><div class="progress"><span id="bar"></span></div></div>
+    <div class="board"><div class="col words" id="wc"></div><div class="col clues" id="cc"></div></div>`;
+
+  function makeCard(d,type){
+    const p=PALETTE[st.data.indexOf(d)%PALETTE.length];
+    const b=document.createElement('button');
+    b.className='card '+type;b.dataset.id=d.id;b.dataset.type=type;
+    b.style.cssText=`--a:${p.a};--b:${p.b};--edge:${p.edge}`;
+    if(type==='word'){
+      b.style.minHeight='84px';
+      b.innerHTML=`<div class="inner"><div class="face front"><span class="em">${d.em}</span><span>${d.name}</span></div><div class="face back">✓ ${d.name}</div></div>`;
+    }else{
+      b.style.minHeight='96px';
+      b.innerHTML=`<div class="inner"><div class="face front"><span>${d.clue}</span><span class="pg">ص ${d.page}</span></div><div class="face back">✓ ${d.name}</div></div>`;
+    }
+    b.addEventListener('click',()=>pick(b));
+    tilt(b,16);
+    return b;
+  }
+  function load(){
+    matched=0;selW=selC=null;locked=false;
+    $('#rb').textContent=`الجولة ${r+1} من 2`;
+    $('#bar').style.width=(r*50)+'%';
+    const its=rounds[r],wc=$('#wc'),cc=$('#cc');
+    wc.innerHTML='<div class="col-title">الكلمة</div>';
+    cc.innerHTML='<div class="col-title">الوصف</div>';
+    shuffle(its).forEach(d=>wc.appendChild(makeCard(d,'word')));
+    shuffle(its).forEach(d=>cc.appendChild(makeCard(d,'clue')));
+  }
+  function pick(card){
+    if(locked||card.classList.contains('matched'))return;
+    sfx.pick();
+    if(card.dataset.type==='word'){if(selW)selW.classList.remove('selected');selW=card;}
+    else{if(selC)selC.classList.remove('selected');selC=card;}
+    card.classList.add('selected');
+    if(selW&&selC)check();
+  }
+  function check(){
+    locked=true;const w=selW,c=selC;
+    if(w.dataset.id===c.dataset.id){
+      streak++;addScore(10+Math.min(streak-1,5)*2);
+      [w,c].forEach(el=>{el.classList.remove('selected');el.classList.add('matched')});
+      sfx.ok();sparkle(w);sparkle(c);matched++;selW=selC=null;
+      later(()=>{locked=false;if(matched===5)endRound()},750);
+    }else{
+      streak=0;miss++;addScore(-2);
+      [w,c].forEach(el=>el.classList.add('wrong','shake'));sfx.bad();
+      later(()=>{[w,c].forEach(el=>el.classList.remove('wrong','shake','selected'));selW=selC=null;locked=false},520);
+    }
+  }
+  function endRound(){
+    $('#bar').style.width=((r+1)*50)+'%';
+    if(r===0){
+      r=1;locked=true;$('#rb').textContent='🎉 رائع! الجولة الثانية تبدأ الآن...';
+      later(load,1400);
+    }else{
+      const stars=miss<=1?3:miss<=4?2:1;
+      later(()=>stageDone(si,miss,stars,`طابقتِ 10 أزواج من الكلمات مع أوصافها.`),500);
+    }
+  }
+  load();
+}
+
+/* ============ مرحلة الاختيار من متعدد ============ */
+function runQuiz(si){
+  const st=STAGES[si], qs=shuffle(st.data), N=qs.length;
+  let i=0, answered=false, t0=0, miss=0;
+  $('#game').innerHTML=`<div class="stagehead">${st.e} ${st.t} – ${st.d}</div>
+    <div class="meta"><span id="qnum"></span><div class="progress"><span id="bar"></span></div></div>
+    <div class="timer"><span id="timerBar"></span></div>
+    <div class="stage"><div class="qcard" id="qcard"></div></div>
+    <div class="opts" id="opts"></div>
+    <div class="feedback" id="feedback"><div class="verdict" id="verdict"></div><p id="expl"></p><button class="btn" id="nextBtn"></button></div>`;
+
+  function loadQ(){
+    const q=qs[i];answered=false;
+    $('#qnum').textContent=`السؤال ${i+1} من ${N}`;
+    $('#bar').style.width=(i*100/N)+'%';
+    $('#feedback').classList.remove('show');
+    const card=$('#qcard');card.style.animation='none';void card.offsetWidth;card.style.animation='';
+    card.innerHTML=`<span class="pg">ص ${q.page}</span><span class="qem">${q.em}</span><div class="qtxt">${q.q}</div>`;
+    const correctText=q.opts[q.ans];
+    const box=$('#opts');box.innerHTML='';
+    shuffle(q.opts).forEach((t,k)=>{
+      const c=COLORS[k],b=document.createElement('button');
+      b.className='opt';b.dataset.correct=(t===correctText)?'1':'0';
+      b.style.cssText=`--a:${c.a};--b:${c.b};--edge:${c.edge};--d:${k*0.09}s`;
+      b.innerHTML=`<span class="ltr">${LETTERS[k]}</span>${t}`;
+      b.onclick=()=>{if(!answered){sfx.pick();reveal(b)}};
+      tilt(b);box.appendChild(b);
+    });
+    startTimer();
+  }
+  function startTimer(){
+    const bar=$('#timerBar');bar.style.transition='none';bar.style.width='100%';void bar.offsetWidth;
+    bar.style.transition=`width ${TIME_LIMIT}s linear`;bar.style.width='0%';
+    t0=Date.now();
+    later(()=>{if(!answered)reveal(null)},TIME_LIMIT*1000);
+  }
+  function reveal(btn){
+    answered=true;clrStage();
+    const q=qs[i],el=(Date.now()-t0)/1000;
+    document.querySelectorAll('.opt').forEach(o=>{
+      o.disabled=true;
+      if(o.dataset.correct==='1')o.classList.add('correct');
+      else if(o===btn)o.classList.add('wrong');
+      else o.classList.add('dim');
+    });
+    const ok=btn&&btn.dataset.correct==='1',v=$('#verdict');
+    if(ok){
+      streak++;addScore(10+(el<6?5:el<12?3:0)+Math.min(streak-1,5)*2);
+      sfx.ok();sparkle(btn);v.className='verdict ok';v.textContent='🎉 إجابة صحيحة! أحسنتِ';
+    }else{
+      streak=0;miss++;updateHud();sfx.bad();
+      v.className='verdict no';v.textContent=btn?'❌ ليست هذه الإجابة، لا بأس!':'⏰ انتهى الوقت!';
+    }
+    $('#expl').textContent=q.why;
+    $('#nextBtn').textContent=i===N-1?'إنهاء المرحلة':'السؤال التالي';
+    $('#feedback').classList.add('show');
+    $('#feedback').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  $('#nextBtn').onclick=()=>{
+    if(i===N-1){
+      const stars=miss<=1?3:miss<=3?2:1;
+      stageDone(si,miss,stars,`أجبتِ إجابة صحيحة على ${N-miss} من ${N} أسئلة.`);
+    }else{i++;loadQ();window.scrollTo({top:0,behavior:'smooth'})}
+  };
+  loadQ();
+}
+
+/* ============ الأحداث ============ */
+$('#startBtn').onclick=()=>{sfx.pick();startChallenge()};
+$('#nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')startChallenge()});
+$('#restartBtn').onclick=()=>{ if(confirm('هل تريدين إعادة التحدي من البداية؟ ستُفقد النقاط الحالية.')) toStart(); };
+$('#clearBoard').onclick=()=>{ if(confirm('هل تريدين مسح لوحة الشرف؟')){ saveBoard([]); renderBoard($('#startBoard'),null);} };
+renderBoard($('#startBoard'),null);
+</script>
+</body>
+</html>
